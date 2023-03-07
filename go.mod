@@ -1,4 +1,4 @@
-module github.com/Hemium/testcontainer
+module github.com/Hemiun/testcontainer
 
 go 1.18
 
