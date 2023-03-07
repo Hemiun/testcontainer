@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/golang-migrate/migrate/v4"
-	"io/fs"
 	"os"
 	"path"
 	"text/template"
 	"time"
+
+	"github.com/golang-migrate/migrate/v4"
 
 	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -25,24 +25,29 @@ import (
 
 //--------------
 
-const (
-	// createDatabasePath - path to database creation script template (see ./script/init/01.database.sql for example)
-	createDatabasePath = "script/init/01.database.sql"
+var (
+	// CreateDatabasePath - path to database creation script template (see ./script/init/01.database.sql for example)
+	CreateDatabasePath = "script/init/01.database.sql"
 
-	//createSchemaPath  - path to database schema creation script template (see ./script/init/02.schema.sql for example)
-	createSchemaPath = "script/init/02.schema.sql"
+	// CreateSchemaPath  - path to database schema creation script template (see ./script/init/02.schema.sql for example)
+	CreateSchemaPath = "script/init/02.schema.sql"
+	// MigrationPath - path to migration scripts
+	MigrationPath = "script/migrations"
+	// ApplyMigrations - if false migrations doesn't apply
+	ApplyMigrations = false
 
-	// migrationPath - path to migration scripts
-	migrationPath = "script/migrations"
+	// DefaultDB - default database name (used for first connection)
+	DefaultDB = "postgres"
+	// DefaultDBUser - database user
+	DefaultDBUser = "postgres"
+	// DefaultDBPass - pass for DefaultDBUser
+	DefaultDBPass = "postgres"
 
-	// Default credentials for container database
-	defaultDB     = "postgres"
-	defaultDBUser = "postgres"
-	defaultDBPass = "postgres"
+	// ExposePostgresPort - database port for expose from container
+	ExposePostgresPort = "5432/tcp"
 
-	exposePostgresPort = "5432/tcp"
-
-	postgresImage = "postgres:14.2"
+	// PostgresImage - docker image name for postgres
+	PostgresImage = "postgres:14.2"
 )
 
 // DatabaseContainerConfig - configuration for database container (postgresql)
@@ -60,6 +65,22 @@ type DatabaseContainerConfig struct {
 // Validate - validation for DatabaseContainerConfig
 func (c *DatabaseContainerConfig) Validate() error {
 	return validator.New().Struct(c)
+}
+
+type MigrationApplyFunc func(dsn string) error
+
+var MigrationApplyFn MigrationApplyFunc = func(dsn string) error {
+	m, err := migrate.New("file://"+path.Clean(MigrationPath), dsn)
+	if err != nil {
+		// db.logger.LogError(ctx, "can't create migrate struct", err)
+		return err
+	}
+	err = m.Up()
+	if err != nil {
+		// db.logger.LogError(ctx, "can't apply migrates", err)
+		return err
+	}
+	return nil
 }
 
 // DatabaseContainer - struct for db container
@@ -91,18 +112,19 @@ func NewDatabaseContainer(ctx context.Context, cfg DatabaseContainerConfig, log 
 	ctx, cancel := context.WithTimeout(ctx, cfg.Timeout)
 	defer cancel()
 
+	// ExposePostgresPort
 	// Prepare new wait strategy for postgres db
-	w := wait.ForSQL(exposePostgresPort, "postgres", func(host string, port nat.Port) string {
+	w := wait.ForSQL(nat.Port(ExposePostgresPort), "postgres", func(host string, port nat.Port) string {
 		return fmt.Sprintf("postgres://postgres:postgres@127.0.0.1:%s/postgres?sslmode=disable", port.Port())
 	}).WithQuery("select 10")
 
 	req := testcontainers.ContainerRequest{
-		Image:        postgresImage,
-		ExposedPorts: []string{exposePostgresPort},
+		Image:        PostgresImage,
+		ExposedPorts: []string{ExposePostgresPort},
 		Env: map[string]string{
-			"POSTGRES_USER":     defaultDBUser,
-			"POSTGRES_PASSWORD": defaultDBPass,
-			"POSTGRES_DB":       defaultDB,
+			"POSTGRES_USER":     DefaultDBUser,
+			"POSTGRES_PASSWORD": DefaultDBPass,
+			"POSTGRES_DB":       DefaultDB,
 		},
 		WaitingFor: w,
 	}
@@ -165,13 +187,6 @@ func (db *DatabaseContainer) PrepareDB(ctx context.Context) error {
 	return nil
 }
 
-// WithLogger sets logger in the DatabaseContainer
-func WithLogger(l Logger) func(*DatabaseContainer) {
-	return func(s *DatabaseContainer) {
-		s.logger = l
-	}
-}
-
 // buildScriptFromTemplate - read and processes a script from the passed path.
 // It is possible to use any value from DatabaseContainerConfig struct as parameter in script.
 func (db *DatabaseContainer) buildScriptFromTemplate(ctx context.Context, path string) (string, error) {
@@ -202,7 +217,7 @@ func (db *DatabaseContainer) createDBAndSchema(ctx context.Context) error {
 	defer cancel()
 
 	// first time we connect with default credentials
-	dsn := db.connectionString(ctx, defaultDB, defaultDBUser, defaultDBPass)
+	dsn := db.connectionString(ctx, DefaultDB, DefaultDBUser, DefaultDBPass)
 	db.logger.LogDebug(ctx, "dsn:"+dsn)
 	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
@@ -210,13 +225,13 @@ func (db *DatabaseContainer) createDBAndSchema(ctx context.Context) error {
 	}
 
 	// db creation
-	script, err := db.buildScriptFromTemplate(ctx, createDatabasePath)
+	script, err := db.buildScriptFromTemplate(ctx, CreateDatabasePath)
 	if err != nil {
 		db.logger.LogPanic(ctx, "Can't build script from template (create database)", err)
 	}
 	_, err = conn.Exec(ctx, script)
 	if err != nil {
-		db.logger.LogPanic(ctx, "Can't execute script:"+createDatabasePath, err)
+		db.logger.LogPanic(ctx, "Can't execute script:"+CreateDatabasePath, err)
 	}
 	//  reconnect to created db
 	err = conn.Close(ctx)
@@ -238,42 +253,28 @@ func (db *DatabaseContainer) createDBAndSchema(ctx context.Context) error {
 	}
 
 	// schema object creation
-	script, err = db.buildScriptFromTemplate(ctx, createSchemaPath)
+	script, err = db.buildScriptFromTemplate(ctx, CreateSchemaPath)
 	if err != nil {
 		db.logger.LogPanic(ctx, "Can't build script from template (create schema)", err)
 	}
 	db.logger.LogDebug(ctx, script)
 	_, err = conn.Exec(ctx, script)
 	if err != nil {
-		db.logger.LogPanic(ctx, "Can't execute script:"+createSchemaPath, err)
+		db.logger.LogPanic(ctx, "Can't execute script:"+CreateSchemaPath, err)
 	}
 
 	return nil
 }
 
 func (db *DatabaseContainer) runMigrate(ctx context.Context) error {
-	// Put here logic that prepare database schema (applying database migrations)
-	p := path.Clean(migrationPath)
-
-	// check folder migrationPath for emptiness
-	// migrate return fs.ErrNotExist for empty input. I don't like this behavior. I believe it's correct
-	entries, err := fs.ReadDir(os.DirFS(p), ".")
-	if err != nil {
-		return err
-	} else if len(entries) == 0 {
+	if !ApplyMigrations {
+		db.logger.LogDebug(ctx, "skip applying migrations")
 		return nil
 	}
 	dsn := db.connectionString(ctx, db.cfg.DatabaseName, db.cfg.SchemaOwner, db.cfg.SchemaOwnerPass)
-	m, err := migrate.New("file://"+path.Clean(migrationPath), dsn)
+	err := MigrationApplyFn(dsn)
 	if err != nil {
-		db.logger.LogError(ctx, "can't create migrate struct", err)
-		return err
-	}
-
-	err = m.Up()
-
-	if err != nil {
-		db.logger.LogError(ctx, "can't apply migrates", err)
+		db.logger.LogError(ctx, "can't apply migrations", err)
 		return err
 	}
 	return nil

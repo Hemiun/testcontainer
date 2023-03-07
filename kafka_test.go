@@ -2,10 +2,12 @@ package testcontainer
 
 import (
 	"context"
-	"github.com/lithammer/shortuuid/v4"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/docker/docker/client"
+	"github.com/lithammer/shortuuid/v4"
+	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
 
@@ -143,9 +145,11 @@ func TestIntegrationKafkaContainer_cleanNetworks(t *testing.T) {
 			defer cancel()
 
 			cli, _, _, err := testcontainers.NewDockerClient()
-			defer cli.Close()
+			defer func(cli *client.Client) {
+				err := cli.Close()
+				require.NoError(t, err)
+			}(cli)
 			require.NoError(t, err)
-
 			target := KafkaContainer{cfg: tt.cfg, dockerClient: cli, logger: newLogger()}
 			require.NotPanics(t, func() { target.cleanNetworks(ctx) })
 		})

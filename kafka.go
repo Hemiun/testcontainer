@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/go-connections/nat"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
@@ -18,13 +20,21 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-const (
-	kafkaImage         = "confluentinc/cp-server:7.2.2"
-	zooImage           = "confluentinc/cp-zookeeper:7.2.2"
-	exposeZooPort      = "2181/tcp"
-	zooPort            = "2181"
-	brokerExternalPort = "9092"
-	brokerInternalport = "29092"
+var (
+	// KafkaImage - docker image name for apache kafka broker
+	KafkaImage = "confluentinc/cp-server:7.2.2"
+	// ZooImage - docker image name for zookeeper
+	ZooImage = "confluentinc/cp-zookeeper:7.2.2"
+
+	// ExposeZooPort - zookeeper port for expose from container
+	ExposeZooPort = "2181/tcp"
+	// ZooPort - zookeeper port
+	ZooPort = "2181"
+
+	// BrokerExternalPort - broker port for external communications
+	BrokerExternalPort = "9092"
+	// BrokerInternalPort - broker port for internal communications
+	BrokerInternalPort = "29092"
 )
 
 var (
@@ -214,15 +224,15 @@ func (target *KafkaContainer) initZookeeper(ctx context.Context) error {
 	req := testcontainers.ContainerRequest{
 		Name:     zooName,
 		Networks: []string{target.networkName},
-		Image:    zooImage,
+		Image:    ZooImage,
 		ExposedPorts: []string{
-			exposeZooPort,
+			ExposeZooPort,
 		},
 		Env: map[string]string{
-			"ZOOKEEPER_CLIENT_PORT": zooPort,
+			"ZOOKEEPER_CLIENT_PORT": ZooPort,
 			"ZOOKEEPER_TICK_TIME":   "2000",
 		},
-		WaitingFor: wait.ForListeningPort(exposeZooPort),
+		WaitingFor: wait.ForListeningPort(nat.Port(ExposeZooPort)),
 	}
 	zoo, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
@@ -267,18 +277,18 @@ func (target *KafkaContainer) initKafkaBroker(ctx context.Context) error {
 	}
 	target.brokerPort = strconv.Itoa(port)
 
-	expose := fmt.Sprintf("%d:%s", port, brokerExternalPort)
-	zooEndpoint := fmt.Sprintf("%s:%s", target.zooName, zooPort)
-	advertisedListeners := fmt.Sprintf("INTERNAL://localhost:%s,EXTERNAL://localhost:%d", brokerInternalport, port)
-	kafkaListeners := fmt.Sprintf("INTERNAL://:%s,EXTERNAL://0.0.0.0:%s", brokerInternalport, brokerExternalPort)
+	expose := fmt.Sprintf("%d:%s", port, BrokerExternalPort)
+	zooEndpoint := fmt.Sprintf("%s:%s", target.zooName, ZooPort)
+	advertisedListeners := fmt.Sprintf("INTERNAL://localhost:%s,EXTERNAL://localhost:%d", BrokerInternalPort, port)
+	kafkaListeners := fmt.Sprintf("INTERNAL://:%s,EXTERNAL://0.0.0.0:%s", BrokerInternalPort, BrokerExternalPort)
 	req := testcontainers.ContainerRequest{
 		Name:     brokerName,
 		Networks: []string{target.networkName},
-		Image:    kafkaImage,
+		Image:    KafkaImage,
 		ExposedPorts: []string{
 			expose,
 		},
-		//AutoRemove: true,
+		// AutoRemove: true,
 		Env: map[string]string{
 			"KAFKA_BROKER_ID":                                   "1",
 			"KAFKA_ZOOKEEPER_CONNECT":                           zooEndpoint,

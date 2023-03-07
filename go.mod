@@ -3,10 +3,13 @@ module github.com/Hemiun/testcontainer
 go 1.18
 
 require (
+	github.com/Shopify/sarama v1.38.1
+	github.com/docker/docker v23.0.0+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/go-playground/validator/v10 v10.11.2
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/jackc/pgx/v4 v4.18.1
+	github.com/lithammer/shortuuid/v4 v4.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.15.0
 	github.com/stretchr/testify v1.8.2
@@ -16,12 +19,10 @@ require (
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Microsoft/go-winio v0.5.2 // indirect
-	github.com/Shopify/sarama v1.38.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
 	github.com/containerd/containerd v1.6.17 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
-	github.com/docker/docker v23.0.0+incompatible // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/eapache/go-resiliency v1.3.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20230111030713-bf00bc1b83b6 // indirect
@@ -50,7 +51,6 @@ require (
 	github.com/klauspost/compress v1.15.14 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/lib/pq v1.10.2 // indirect
-	github.com/lithammer/shortuuid/v4 v4.0.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/moby/patternmatcher v0.5.0 // indirect
 	github.com/moby/sys/sequential v0.5.0 // indirect

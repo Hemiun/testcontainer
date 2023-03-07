@@ -3,8 +3,9 @@ package testcontainer
 import (
 	"context"
 	"fmt"
-	zero "github.com/rs/zerolog"
 	"os"
+
+	zero "github.com/rs/zerolog"
 )
 
 // Logger - interface for logging inside module testcontainers
@@ -54,5 +55,5 @@ type containerLogger struct {
 
 // Printf write log message
 func (l *containerLogger) Printf(format string, v ...interface{}) {
-	l.log.LogDebug(nil, "[TestContainer]"+fmt.Sprintf(format, v...))
+	l.log.LogDebug(context.Background(), "[TestContainer]"+fmt.Sprintf(format, v...))
 }

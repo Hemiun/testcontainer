@@ -3,9 +3,10 @@ package testcontainer
 import (
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	_ "github.com/go-playground/validator/v10"
 )
@@ -32,7 +33,7 @@ func TestDatabaseContainer_buildScriptFromTemplate(t *testing.T) {
 				Timeout:         time.Minute,
 			},
 			args: args{
-				path: createDatabasePath,
+				path: CreateDatabasePath,
 			},
 			wantErr: false,
 		},
@@ -77,7 +78,7 @@ func TestDatabaseContainer_buildScriptFromTemplate(t *testing.T) {
 				Timeout:         time.Minute,
 			},
 			args: args{
-				path: createSchemaPath,
+				path: CreateSchemaPath,
 			},
 			wantErr: false,
 		},
@@ -124,7 +125,7 @@ func TestIntegrationDatabaseContainer_createDBAndSchema(t *testing.T) {
 				Timeout:         time.Minute,
 			},
 			args: args{
-				path: createDatabasePath,
+				path: CreateDatabasePath,
 			},
 			wantErr: false,
 		},
@@ -168,7 +169,7 @@ func TestIntegrationDatabaseContainer_PrepareDB(t *testing.T) {
 				Timeout:         time.Minute,
 			},
 			args: args{
-				path: createDatabasePath,
+				path: CreateDatabasePath,
 			},
 			wantErr: false,
 		},
