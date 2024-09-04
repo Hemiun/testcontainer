@@ -9,11 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/client"
 	"github.com/go-playground/validator/v10"
 	"github.com/lithammer/shortuuid/v4"
 	"github.com/testcontainers/testcontainers-go"
@@ -89,7 +88,7 @@ type KafkaContainer struct {
 	sessionID    string
 	networkName  string
 	zooName      string
-	dockerClient *client.Client
+	dockerClient *testcontainers.DockerClient
 	brokerPort   string
 }
 
@@ -144,7 +143,6 @@ func NewKafkaContainer(ctx context.Context, cfg KafkaContainerConfig, logger Log
 }
 
 // GetBrokerList - return endpoint list for kafka connecting
-//
 func (target *KafkaContainer) GetBrokerList(ctx context.Context) ([]string, error) {
 	if target.broker == nil {
 		return nil, ErrNoBrokerAvailable
@@ -191,14 +189,14 @@ func (target *KafkaContainer) initNetwork(ctx context.Context) error {
 	netFilterArgs := filters.NewArgs()
 	netFilterArgs.Add("name", networkName)
 	target.logger.LogDebug(ctx, "Try to find an existing network")
-	foundNet, err := target.dockerClient.NetworkList(ctx, types.NetworkListOptions{Filters: netFilterArgs})
+	foundNet, err := target.dockerClient.NetworkList(ctx, network.ListOptions{Filters: netFilterArgs})
 	if err != nil {
 		target.logger.LogError(ctx, "Can't execute query with docker client", err)
 		return err
 	}
 	if len(foundNet) == 0 {
 		target.logger.LogDebug(ctx, "Network not found. Try to create. Network name is "+networkName)
-		n, err := target.dockerClient.NetworkCreate(ctx, networkName, types.NetworkCreate{CheckDuplicate: true})
+		n, err := target.dockerClient.NetworkCreate(ctx, networkName, network.CreateOptions{})
 		if err != nil {
 			target.logger.LogError(ctx, "Can't execute create network", err)
 			return err
@@ -243,8 +241,13 @@ func (target *KafkaContainer) initZookeeper(ctx context.Context) error {
 	}
 
 	target.zoo = zoo
-	name, _ := zoo.Name(ctx)
-	target.logger.LogDebug(ctx, fmt.Sprintf("Zookeper created. DokerID:%s, Name:%s", zoo.GetContainerID(), name))
+	cInfo, err := zoo.Inspect(ctx)
+	if err != nil {
+		target.logger.LogError(ctx, "can't inspect container", err)
+		return err
+	}
+
+	target.logger.LogDebug(ctx, fmt.Sprintf("Zookeper created. DokerID:%s, Name:%s", zoo.GetContainerID(), cInfo.Name))
 	return nil
 }
 
@@ -318,14 +321,19 @@ func (target *KafkaContainer) initKafkaBroker(ctx context.Context) error {
 	}
 
 	target.broker = broker
-	name, _ := broker.Name(ctx)
-	target.logger.LogDebug(ctx, fmt.Sprintf("Kafka broker created. DokerID:%s, Name:%s", broker.GetContainerID(), name))
+	cInfo, err := broker.Inspect(ctx)
+	if err != nil {
+		target.logger.LogError(ctx, "can't inspect container", err)
+		return err
+	}
+
+	target.logger.LogDebug(ctx, fmt.Sprintf("Kafka broker created. DokerID:%s, Name:%s", broker.GetContainerID(), cInfo.Name))
 
 	return nil
 }
 
 func (target *KafkaContainer) initDockerClient() error {
-	cli, _, _, err := testcontainers.NewDockerClient()
+	cli, err := testcontainers.NewDockerClientWithOpts(context.Background())
 	target.dockerClient = cli
 	if err != nil {
 		return err
@@ -335,7 +343,7 @@ func (target *KafkaContainer) initDockerClient() error {
 
 // cleanNetworks - removes docker networks if name match pattern
 func (target *KafkaContainer) cleanNetworks(ctx context.Context) { //nolint:unused
-	foundNets, err := target.dockerClient.NetworkList(ctx, types.NetworkListOptions{})
+	foundNets, err := target.dockerClient.NetworkList(ctx, network.ListOptions{})
 	if err != nil {
 		target.logger.LogError(ctx, "can't get network list", err)
 		return

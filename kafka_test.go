@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/docker/docker/client"
 	"github.com/lithammer/shortuuid/v4"
 	"github.com/stretchr/testify/require"
 
@@ -38,7 +37,7 @@ func TestIntegrationKafkaContainer_initNetwork(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), tt.cfg.Timeout)
 			defer cancel()
 
-			cli, _, _, err := testcontainers.NewDockerClient()
+			cli, err := testcontainers.NewDockerClientWithOpts(ctx)
 			require.NoError(t, err)
 
 			target := KafkaContainer{cfg: tt.cfg, dockerClient: cli, sessionID: shortuuid.New(), logger: newLogger()}
@@ -144,8 +143,9 @@ func TestIntegrationKafkaContainer_cleanNetworks(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), tt.cfg.Timeout)
 			defer cancel()
 
-			cli, _, _, err := testcontainers.NewDockerClient()
-			defer func(cli *client.Client) {
+			cli, err := testcontainers.NewDockerClientWithOpts(ctx)
+
+			defer func(cli *testcontainers.DockerClient) {
 				err := cli.Close()
 				require.NoError(t, err)
 			}(cli)

@@ -4,21 +4,18 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/docker/go-connections/nat"
+	"github.com/go-playground/validator/v10"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/testcontainers/testcontainers-go/wait"
 	"os"
 	"path"
 	"text/template"
 	"time"
 
-	"github.com/golang-migrate/migrate/v4"
-
-	"github.com/docker/go-connections/nat"
-	"github.com/testcontainers/testcontainers-go/wait"
-
-	"github.com/go-playground/validator/v10"
-
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/jackc/pgx/v4"
 	_ "github.com/pkg/errors"
 	"github.com/testcontainers/testcontainers-go"
 )
@@ -47,7 +44,7 @@ var (
 	ExposePostgresPort = "5432/tcp"
 
 	// PostgresImage - docker image name for postgres
-	PostgresImage = "postgres:14.2"
+	PostgresImage = "postgres:16.4"
 )
 
 // DatabaseContainerConfig - configuration for database container (postgresql)
