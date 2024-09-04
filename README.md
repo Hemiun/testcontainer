@@ -2,7 +2,7 @@
 ## Introduction
 Package that makes it simple to create and clean up container-based dependencies for automated integration/smoke tests.
 For implementation used  [testcontainers-go](https://github.com/testcontainers/testcontainers-go) library.  
-Implemented containers for postgres, apache zookeeper, apache kafka
+Implemented containers for postgres and apache kafka (KRaft mode)
 ## Features 
 ### Postgresql
 - Starting and stopping a container
@@ -10,7 +10,7 @@ Implemented containers for postgres, apache zookeeper, apache kafka
 - applying all up migrations
 
 ### Kafka
-- Starting and stopping a containers (zookeeper + kafka). ZooKeeper and broker started in the common docker network. A new network is created for each instance of the KafkaContainer. This avoids concurrent tests.
+- Starting and stopping a container (kafka broker). A new network is created for each instance of the KafkaContainer. This avoids concurrent tests.
 - Custom strategy for kafka broker readiness check (through metadata acquisition) implemented
 
 ## Installation
