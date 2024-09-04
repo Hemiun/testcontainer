@@ -18,7 +18,6 @@ import (
 
 var (
 	// KafkaBrokerImage - docker image name for apache kafka broker
-	//KafkaBrokerImage = "confluentinc/cp-server:7.2.2"
 	KafkaBrokerImage = "confluentinc/cp-server:7.5.0"
 
 	// BrokerExternalPort - broker port for external communications
@@ -108,13 +107,7 @@ func NewKafkaContainer(ctx context.Context, cfg KafkaContainerConfig, logger Log
 		target.logger.LogError(ctx, "Can't init network for containers", err)
 		return nil, err
 	}
-	/*
-		err = target.initZookeeper(ctx)
-		if err != nil {
-			target.logger.LogError(ctx, "Can't init zookeeper", err)
-			return nil, err
-		}
-	*/
+
 	err = target.initKafkaBroker(ctx)
 	if err != nil {
 		target.logger.LogError(ctx, "Can't init kafka broker", err)
