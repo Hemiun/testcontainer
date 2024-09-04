@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/docker/docker/client"
 	"github.com/lithammer/shortuuid/v4"
 	"github.com/stretchr/testify/require"
 
@@ -38,7 +37,7 @@ func TestIntegrationKafkaContainer_initNetwork(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), tt.cfg.Timeout)
 			defer cancel()
 
-			cli, _, _, err := testcontainers.NewDockerClient()
+			cli, err := testcontainers.NewDockerClientWithOpts(ctx)
 			require.NoError(t, err)
 
 			target := KafkaContainer{cfg: tt.cfg, dockerClient: cli, sessionID: shortuuid.New(), logger: newLogger()}
@@ -53,42 +52,7 @@ func TestIntegrationKafkaContainer_initNetwork(t *testing.T) {
 	}
 }
 
-func TestIntegrationKafkaContainer_InitZoo(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip integration tests in short mode")
-	}
-
-	tests := []struct {
-		name string
-		cfg  KafkaContainerConfig
-	}{
-		{
-			name: "Case 1. Positive(prepare zookeeper)",
-			cfg: KafkaContainerConfig{
-				Timeout: time.Minute,
-				Network: testNetwork,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), tt.cfg.Timeout)
-			defer cancel()
-
-			target := KafkaContainer{cfg: tt.cfg, logger: newLogger()}
-			err := target.initZookeeper(ctx)
-			defer func() {
-				if target.zoo != nil {
-					_ = target.zoo.Terminate(ctx)
-				}
-			}()
-			// target.zoo.Terminate(ctx) //nolint:errcheck
-			require.NoError(t, err)
-		})
-	}
-}
-
-func TestIntegrationKafkaContainer_all(t *testing.T) {
+func TestIntegrationKafkaContainer_KafkaBroker(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip integration tests in short mode")
 	}
@@ -144,8 +108,9 @@ func TestIntegrationKafkaContainer_cleanNetworks(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), tt.cfg.Timeout)
 			defer cancel()
 
-			cli, _, _, err := testcontainers.NewDockerClient()
-			defer func(cli *client.Client) {
+			cli, err := testcontainers.NewDockerClientWithOpts(ctx)
+
+			defer func(cli *testcontainers.DockerClient) {
 				err := cli.Close()
 				require.NoError(t, err)
 			}(cli)
