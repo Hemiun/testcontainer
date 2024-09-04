@@ -4,20 +4,20 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/docker/go-connections/nat"
-	"github.com/go-playground/validator/v10"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/jackc/pgx/v5"
-	"github.com/testcontainers/testcontainers-go/wait"
 	"os"
 	"path"
 	"text/template"
 	"time"
 
+	"github.com/docker/go-connections/nat"
+	"github.com/go-playground/validator/v10"
+	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/jackc/pgx/v5"
 	_ "github.com/pkg/errors"
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 //--------------

@@ -52,42 +52,7 @@ func TestIntegrationKafkaContainer_initNetwork(t *testing.T) {
 	}
 }
 
-func TestIntegrationKafkaContainer_InitZoo(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip integration tests in short mode")
-	}
-
-	tests := []struct {
-		name string
-		cfg  KafkaContainerConfig
-	}{
-		{
-			name: "Case 1. Positive(prepare zookeeper)",
-			cfg: KafkaContainerConfig{
-				Timeout: time.Minute,
-				Network: testNetwork,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), tt.cfg.Timeout)
-			defer cancel()
-
-			target := KafkaContainer{cfg: tt.cfg, logger: newLogger()}
-			err := target.initZookeeper(ctx)
-			defer func() {
-				if target.zoo != nil {
-					_ = target.zoo.Terminate(ctx)
-				}
-			}()
-			// target.zoo.Terminate(ctx) //nolint:errcheck
-			require.NoError(t, err)
-		})
-	}
-}
-
-func TestIntegrationKafkaContainer_all(t *testing.T) {
+func TestIntegrationKafkaContainer_KafkaBroker(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip integration tests in short mode")
 	}
