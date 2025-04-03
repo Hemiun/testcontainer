@@ -124,6 +124,7 @@ func NewDatabaseContainer(ctx context.Context, cfg DatabaseContainerConfig, log 
 			"POSTGRES_DB":       DefaultDB,
 		},
 		WaitingFor: w,
+		Privileged: true,
 	}
 	postgres, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
