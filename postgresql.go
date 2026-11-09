@@ -44,7 +44,7 @@ var (
 	ExposePostgresPort = "5432/tcp"
 
 	// PostgresImage - docker image name for postgres
-	PostgresImage = "postgres:16.4"
+	PostgresImage = "postgres:18.6"
 )
 
 // DatabaseContainerConfig - configuration for database container (postgresql)

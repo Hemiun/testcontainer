@@ -13,6 +13,17 @@ Implemented containers for postgres and apache kafka (KRaft mode)
 - Starting and stopping a container (kafka broker). A new network is created for each instance of the KafkaContainer. This avoids concurrent tests.
 - Custom strategy for kafka broker readiness check (through metadata acquisition) implemented
 
+### Docker images
+| Container  | Default image        | Variable                         |
+|------------|----------------------|----------------------------------|
+| Postgresql | `postgres:18.6`      | `testcontainer.PostgresImage`    |
+| Kafka      | `apache/kafka:4.4.0` | `testcontainer.KafkaBrokerImage` |
+
+You can override the image before creating a container:
+```go
+testcontainer.PostgresImage = "postgres:17"
+```
+
 ## Installation
 ```
  go get github.com/Hemiun/testcontainer
