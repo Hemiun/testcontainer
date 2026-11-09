@@ -18,7 +18,7 @@ import (
 
 var (
 	// KafkaBrokerImage - docker image name for apache kafka broker
-	KafkaBrokerImage = "confluentinc/cp-server:7.5.0"
+	KafkaBrokerImage = "apache/kafka:4.4.0"
 
 	// BrokerExternalPort - broker port for external communications
 	BrokerExternalPort = "9092"
@@ -216,7 +216,7 @@ func (target *KafkaContainer) initKafkaBroker(ctx context.Context) error {
 	expose := fmt.Sprintf("%d:%s", port, BrokerExternalPort)
 	controllerPort := 29093 // TODO: какой тут должен быть порт?
 	advertisedListeners := fmt.Sprintf("INTERNAL://localhost:%s,EXTERNAL://localhost:%d", BrokerInternalPort, port)
-	kafkaListeners := fmt.Sprintf("INTERNAL://:%s,EXTERNAL://0.0.0.0:%s,CONTROLLER://0.0.0.0:%d, ", BrokerInternalPort, BrokerExternalPort, controllerPort)
+	kafkaListeners := fmt.Sprintf("INTERNAL://:%s,EXTERNAL://0.0.0.0:%s,CONTROLLER://0.0.0.0:%d", BrokerInternalPort, BrokerExternalPort, controllerPort)
 	req := testcontainers.ContainerRequest{
 		Name:     brokerName,
 		Networks: []string{target.networkName},
@@ -226,22 +226,21 @@ func (target *KafkaContainer) initKafkaBroker(ctx context.Context) error {
 		},
 		// AutoRemove: true,
 		Env: map[string]string{
-			"KAFKA_BROKER_ID":                                   "1",
-			"KAFKA_LISTENER_SECURITY_PROTOCOL_MAP":              "CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT",
-			"KAFKA_ADVERTISED_LISTENERS":                        advertisedListeners,
-			"KAFKA_LISTENERS":                                   kafkaListeners,
-			"KAFKA_INTER_BROKER_LISTENER_NAME":                  "INTERNAL",
-			"KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR":            "1",
-			"KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS":            "0",
-			"KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR":  "1",
-			"KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR": "1",
-			"KAFKA_TRANSACTION_STATE_LOG_MIN_ISR":               "1",
-			"KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR":    "1",
-			"CONFLUENT_METRICS_ENABLE":                          "false",
-			"KAFKA_PROCESS_ROLES":                               "broker,controller",
-			"KAFKA_CONTROLLER_QUORUM_VOTERS":                    "1@localhost:29093",
-			"KAFKA_CONTROLLER_LISTENER_NAMES":                   "CONTROLLER",
-			"KAFKA_LOG_DIRS":                                    "/tmp/kraft-combined-logs",
+			"KAFKA_NODE_ID":                                          "1",
+			"KAFKA_LISTENER_SECURITY_PROTOCOL_MAP":                   "CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT",
+			"KAFKA_ADVERTISED_LISTENERS":                             advertisedListeners,
+			"KAFKA_LISTENERS":                                        kafkaListeners,
+			"KAFKA_INTER_BROKER_LISTENER_NAME":                       "INTERNAL",
+			"KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR":                 "1",
+			"KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS":                 "0",
+			"KAFKA_TRANSACTION_STATE_LOG_MIN_ISR":                    "1",
+			"KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR":         "1",
+			"KAFKA_SHARE_COORDINATOR_STATE_TOPIC_REPLICATION_FACTOR": "1",
+			"KAFKA_SHARE_COORDINATOR_STATE_TOPIC_MIN_ISR":            "1",
+			"KAFKA_PROCESS_ROLES":                                    "broker,controller",
+			"KAFKA_CONTROLLER_QUORUM_VOTERS":                         "1@localhost:29093",
+			"KAFKA_CONTROLLER_LISTENER_NAMES":                        "CONTROLLER",
+			"KAFKA_LOG_DIRS":                                         "/tmp/kraft-combined-logs",
 			// CLUSTER_ID should be correct uuid
 			"CLUSTER_ID": "MkU3OEVBNTcwNTJENDM2Qk",
 		},
